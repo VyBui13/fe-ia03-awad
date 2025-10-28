@@ -10,7 +10,7 @@ export default function HomePage() {
 
   const handleLogout = () => {
     logout();
-    toast.success("Đăng xuất thành công!");
+    toast.success("Logged out successfully!");
     navigate("/login");
   };
 
