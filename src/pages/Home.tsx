@@ -1,12 +1,15 @@
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 import { CircleFadingArrowUpIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 export default function HomePage() {
+  const { logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
+    logout();
     toast.success("Đăng xuất thành công!");
     navigate("/login");
   };

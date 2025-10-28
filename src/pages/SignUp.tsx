@@ -17,10 +17,24 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 // 1. Định nghĩa Schema Validation bằng Zod
-const formSchema = z.object({
-  email: z.string().email({ message: "Email không hợp lệ." }),
-  password: z.string().min(6, { message: "Mật khẩu phải có ít nhất 6 ký tự." }),
-});
+const formSchema = z
+  .object({
+    email: z
+      .string()
+      .min(1, { message: "Vui lòng nhập email." })
+      .email({ message: "Email không hợp lệ." }),
+    password: z
+      .string()
+      .min(1, { message: "Vui lòng nhập mật khẩu." })
+      .min(6, { message: "Mật khẩu phải có ít nhất 6 ký tự." }),
+    confirmPassword: z
+      .string()
+      .min(1, { message: "Vui lòng nhập lại mật khẩu." }),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Mật khẩu xác nhận không khớp.",
+    path: ["confirmPassword"], // Thêm 'path' để lỗi hiển thị đúng ô confirmPassword
+  });
 
 // 2. Định nghĩa kiểu dữ liệu cho API response (để xử lý lỗi)
 interface ApiErrorResponse {
@@ -29,9 +43,10 @@ interface ApiErrorResponse {
 
 // 3. Logic gọi API đăng ký
 const registerUser = async (values: z.infer<typeof formSchema>) => {
+  const { email, password } = values;
   const { data } = await axios.post(
     `${import.meta.env.VITE_API_URL}/user/register`, // [cite: 35]
-    values
+    { email, password }
   );
   return data;
 };
@@ -45,7 +60,7 @@ export default function SignUpPage() {
     onSuccess: (data) => {
       console.log("Đăng ký thành công (mô phỏng):", data);
       toast.success("Đăng ký thành công! Vui lòng đăng nhập.");
-      navigate("/login"); // Chuyển hướng sang trang Login
+      navigate("/signin"); // Chuyển hướng sang trang Login
     },
     onError: (error: AxiosError) => {
       let errorMessage = "Đã có lỗi xảy ra. Vui lòng thử lại.";
@@ -62,6 +77,7 @@ export default function SignUpPage() {
     defaultValues: {
       email: "",
       password: "",
+      confirmPassword: "",
     },
   });
 
@@ -104,9 +120,23 @@ export default function SignUpPage() {
               </FormItem>
             )}
           />
+
+          <FormField
+            control={form.control}
+            name="confirmPassword"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Xác nhận Mật khẩu</FormLabel>
+                <FormControl>
+                  <Input type="password" placeholder="******" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           <Button
             type="submit"
-            className="w-full"
+            className="w-full cursor-pointer"
             disabled={mutation.isPending}
           >
             {mutation.isPending ? "Đang xử lý..." : "Đăng Ký"}
