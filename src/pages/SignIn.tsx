@@ -19,8 +19,8 @@ import { useMutation } from "@tanstack/react-query";
 
 // 1. Schema Validation (tương tự SignUp)
 const formSchema = z.object({
-  email: z.string().email({ message: "Email không hợp lệ." }),
-  password: z.string().min(1, { message: "Vui lòng nhập mật khẩu." }), // Chỉ cần không trống
+  email: z.string().email({ message: "Invalid email address." }),
+  password: z.string().min(1, { message: "Please enter your password." }), // Chỉ cần không trống
 });
 
 const loginUser = async (values: z.infer<typeof formSchema>) => {
@@ -47,18 +47,15 @@ export default function SignInPage() {
   const mutation = useMutation({
     mutationFn: loginUser,
     onSuccess: (data) => {
-      // 4. ĐĂNG NHẬP THÀNH CÔNG
       login(data.accessToken); // Lưu token vào Context và localStorage
 
-      toast.success("Đăng nhập thành công!");
+      toast.success("Sign in successfully!");
       navigate("/"); // Chuyển hướng về trang chủ
     },
     onError: (error: AxiosError) => {
       console.log("Lỗi đăng nhập:", error);
       // Xử lý lỗi (ví dụ: sai mật khẩu)
-      toast.error(
-        "Đăng nhập thất bại. Vui lòng kiểm tra lại email và mật khẩu."
-      );
+      toast.error("Failed to sign in. Please check your email and password.");
     },
   });
 
@@ -76,7 +73,7 @@ export default function SignInPage() {
           onSubmit={form.handleSubmit(onSubmit)}
           className="space-y-4 w-full max-w-sm p-8 border rounded-lg shadow-lg"
         >
-          <h2 className="text-2xl font-bold text-center">Đăng Nhập</h2>
+          <h2 className="text-2xl font-bold text-center">Sign In</h2>
           {/* Email field [cite: 40] */}
           <FormField
             control={form.control}
@@ -97,7 +94,7 @@ export default function SignInPage() {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Mật khẩu</FormLabel>
+                <FormLabel>Password</FormLabel>
                 <FormControl>
                   <Input type="password" placeholder="******" {...field} />
                 </FormControl>
@@ -110,16 +107,18 @@ export default function SignInPage() {
             className="w-full cursor-pointer"
             disabled={mutation.isPending}
           >
-            {mutation.isPending ? "Đang xử lý..." : "Đăng Nhập"}
+            {mutation.isPending ? "Processing..." : "Sign In"}
           </Button>
           <div className="flex items-center justify-center space-x-2">
-            <p className="text-muted-foreground text-sm">Chưa có tài khoản?</p>
+            <p className="text-muted-foreground text-sm">
+              Do not have any accounts?
+            </p>
             <Button
               variant="link"
               onClick={() => navigate("/signup")}
               className="cursor-pointer text-blue-600"
             >
-              Đăng ký
+              Sign Up
             </Button>
           </div>
         </form>

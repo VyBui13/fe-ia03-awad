@@ -21,31 +21,26 @@ const formSchema = z
   .object({
     email: z
       .string()
-      .min(1, { message: "Vui lòng nhập email." })
-      .email({ message: "Email không hợp lệ." }),
+      .min(1, { message: "Email is required." })
+      .email({ message: "Invalid email address." }),
     password: z
       .string()
-      .min(1, { message: "Vui lòng nhập mật khẩu." })
-      .min(6, { message: "Mật khẩu phải có ít nhất 6 ký tự." }),
+      .min(1, { message: "Please enter your password." })
+      .min(6, { message: "Password must be at least 6 characters long." }),
     confirmPassword: z
       .string()
-      .min(1, { message: "Vui lòng nhập lại mật khẩu." }),
+      .min(1, { message: "Please confirm your password." }),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Mật khẩu xác nhận không khớp.",
+    message: "Passwords do not match.",
     path: ["confirmPassword"], // Thêm 'path' để lỗi hiển thị đúng ô confirmPassword
   });
-
-// 2. Định nghĩa kiểu dữ liệu cho API response (để xử lý lỗi)
-interface ApiErrorResponse {
-  message: string;
-}
 
 // 3. Logic gọi API đăng ký
 const registerUser = async (values: z.infer<typeof formSchema>) => {
   const { email, password } = values;
   const { data } = await axios.post(
-    `${import.meta.env.VITE_API_URL}/user/register`, // [cite: 35]
+    `${import.meta.env.VITE_API_URL}/user/register`,
     { email, password }
   );
   return data;
@@ -57,16 +52,21 @@ export default function SignUpPage() {
   // 4. Setup React Query Mutation [cite: 45]
   const mutation = useMutation({
     mutationFn: registerUser,
-    onSuccess: (data) => {
-      console.log("Đăng ký thành công (mô phỏng):", data);
-      toast.success("Đăng ký thành công! Vui lòng đăng nhập.");
+    onSuccess: () => {
+      toast.success("Sign up successfully! Please log in.");
       navigate("/signin"); // Chuyển hướng sang trang Login
     },
     onError: (error: AxiosError) => {
-      let errorMessage = "Đã có lỗi xảy ra. Vui lòng thử lại.";
+      let errorMessage = "Something went wrong. Please try again.";
+
+      // Kiểm tra status code của lỗi
       if (axios.isAxiosError(error) && error.response) {
-        errorMessage = (error.response.data as ApiErrorResponse).message;
+        if (error.response.status === 409) {
+          // 409 Conflict
+          errorMessage = "This email already exists.";
+        }
       }
+
       toast.error(errorMessage);
     },
   });
@@ -93,7 +93,7 @@ export default function SignUpPage() {
           onSubmit={form.handleSubmit(onSubmit)}
           className="space-y-4 w-full max-w-sm p-8 border rounded-lg shadow-lg"
         >
-          <h2 className="text-2xl font-bold text-center">Đăng Ký</h2>
+          <h2 className="text-2xl font-bold text-center">Sign Up</h2>
           <FormField
             control={form.control}
             name="email"
@@ -112,7 +112,7 @@ export default function SignUpPage() {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Mật khẩu</FormLabel>
+                <FormLabel>Password</FormLabel>
                 <FormControl>
                   <Input type="password" placeholder="******" {...field} />
                 </FormControl>
@@ -126,7 +126,7 @@ export default function SignUpPage() {
             name="confirmPassword"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Xác nhận Mật khẩu</FormLabel>
+                <FormLabel>Confirm Password</FormLabel>
                 <FormControl>
                   <Input type="password" placeholder="******" {...field} />
                 </FormControl>
@@ -139,8 +139,20 @@ export default function SignUpPage() {
             className="w-full cursor-pointer"
             disabled={mutation.isPending}
           >
-            {mutation.isPending ? "Đang xử lý..." : "Đăng Ký"}
+            {mutation.isPending ? "Processing..." : "Sign Up"}
           </Button>
+          <div className="flex items-center justify-center space-x-2">
+            <p className="text-muted-foreground text-sm">
+              Already have an account?
+            </p>
+            <Button
+              variant="link"
+              onClick={() => navigate("/signin")}
+              className="cursor-pointer text-blue-600"
+            >
+              Sign In
+            </Button>
+          </div>
         </form>
       </Form>
     </div>
