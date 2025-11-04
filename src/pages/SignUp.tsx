@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { registerUser } from "@/services/apiService";
 
 // 1. Định nghĩa Schema Validation bằng Zod
 const formSchema = z
@@ -35,16 +36,6 @@ const formSchema = z
     message: "Passwords do not match.",
     path: ["confirmPassword"], // Thêm 'path' để lỗi hiển thị đúng ô confirmPassword
   });
-
-// 3. Logic gọi API đăng ký
-const registerUser = async (values: z.infer<typeof formSchema>) => {
-  const { email, password } = values;
-  const { data } = await axios.post(
-    `${import.meta.env.VITE_API_URL}/user/register`,
-    { email, password }
-  );
-  return data;
-};
 
 export default function SignUpPage() {
   const navigate = useNavigate();
