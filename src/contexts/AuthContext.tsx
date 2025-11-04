@@ -1,3 +1,4 @@
+// src/contexts/AuthContext.tsx
 import {
   createContext,
   useContext,
@@ -5,63 +6,80 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
+import { setAccessToken } from "@/lib/api"; // Import từ file api
+import { refreshAccessToken } from "@/services/apiService"; // Import từ service
 
 // Định nghĩa kiểu dữ liệu cho context
 interface AuthContextType {
-  token: string | null;
-  login: (token: string) => void;
+  accessToken: string | null;
+  login: (accessToken: string, refreshToken: string) => void;
   logout: () => void;
   isAuthenticated: boolean;
   isLoading: boolean;
 }
 
-// Tạo Context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Tạo Provider (component bao bọc)
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [token, setToken] = useState<string | null>(null);
+  // 1. Access token lưu trong MEMORY (React state) (Req 21)
+  const [accessToken, setTokenInState] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 1. Kiểm tra localStorage khi app mới tải
+  // 2. Kiểm tra Refresh Token khi app tải
   useEffect(() => {
-    try {
-      const storedToken = localStorage.getItem("accessToken");
-      if (storedToken) {
-        setToken(storedToken);
+    const initializeAuth = async () => {
+      // Chỉ thực hiện khi có refreshToken trong localStorage (Req 22)
+      const refreshToken = localStorage.getItem("refreshToken");
+      if (refreshToken) {
+        try {
+          // Thử gọi API refresh
+          const { accessToken: newAccessToken } = await refreshAccessToken();
+          // Thành công: Đăng nhập
+          login(newAccessToken, refreshToken);
+        } catch (error) {
+          // Thất bại: (token hết hạn), coi như logout
+          console.error("Failed to refresh on init", error);
+          logout();
+        }
       }
-    } catch (e) {
-      console.error("Failed to load token", e);
-    } finally {
-      setIsLoading(false); // 2. Dù thành công hay thất bại, cũng tắt loading
-    }
-  }, []);
+      setIsLoading(false);
+    };
 
-  // 2. Hàm Login
-  const login = (newToken: string) => {
-    setToken(newToken);
-    localStorage.setItem("accessToken", newToken); // Lưu vào localStorage
+    initializeAuth();
+  }, []); // Chỉ chạy 1 lần khi app mount
+
+  // 3. Hàm Login: Nhận cả 2 token
+  const login = (newAccessToken: string, newRefreshToken: string) => {
+    setTokenInState(newAccessToken); // Lưu access vào state (memory)
+    setAccessToken(newAccessToken); // Cập nhật cho Axios interceptor
+    localStorage.setItem("refreshToken", newRefreshToken); // Lưu refresh vào localStorage (Req 22)
   };
 
-  // 3. Hàm Logout
+  // 4. Hàm Logout: Xóa tất cả token (Req 22)
   const logout = () => {
-    setToken(null);
-    localStorage.removeItem("accessToken"); // Xóa khỏi localStorage
+    setTokenInState(null);
+    setAccessToken(null); // Xóa khỏi Axios interceptor
+    localStorage.removeItem("refreshToken");
   };
 
-  // 4. Trạng thái đã xác thực
-  const isAuthenticated = !!token; // Nếu có token -> true
+  const isAuthenticated = !!accessToken;
 
   return (
     <AuthContext.Provider
-      value={{ token, login, logout, isAuthenticated, isLoading }}
+      value={{
+        accessToken,
+        login,
+        logout,
+        isAuthenticated,
+        isLoading,
+      }}
     >
-      {children}
+      {!isLoading && children} {/* Chỉ render con khi đã check xong */}
     </AuthContext.Provider>
   );
 };
 
-// 5. Tạo một custom Hook để dễ dàng sử dụng
+// Custom Hook (giữ nguyên)
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {

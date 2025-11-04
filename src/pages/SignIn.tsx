@@ -13,23 +13,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import axios, { AxiosError } from "axios";
+import { AxiosError } from "axios";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMutation } from "@tanstack/react-query";
+import { loginUser } from "@/services/apiService";
 
 // 1. Schema Validation (tương tự SignUp)
 const formSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
   password: z.string().min(1, { message: "Please enter your password." }), // Chỉ cần không trống
 });
-
-const loginUser = async (values: z.infer<typeof formSchema>) => {
-  const { data } = await axios.post(
-    `${import.meta.env.VITE_API_URL}/user/login`,
-    values
-  );
-  return data; // data này sẽ chứa { accessToken: "..." }
-};
 
 export default function SignInPage() {
   // 2. Setup React Hook Form
@@ -47,14 +40,13 @@ export default function SignInPage() {
   const mutation = useMutation({
     mutationFn: loginUser,
     onSuccess: (data) => {
-      login(data.accessToken); // Lưu token vào Context và localStorage
+      login(data.accessToken, data.refreshToken); // Lưu token vào Context và localStorage
 
       toast.success("Sign in successfully!");
       navigate("/"); // Chuyển hướng về trang chủ
     },
     onError: (error: AxiosError) => {
       console.log("Lỗi đăng nhập:", error);
-      // Xử lý lỗi (ví dụ: sai mật khẩu)
       toast.error("Failed to sign in. Please check your email and password.");
     },
   });
@@ -63,14 +55,20 @@ export default function SignInPage() {
 
   // 5. Hàm Submit
   function onSubmit(values: z.infer<typeof formSchema>) {
-    mutation.mutate(values); // Gọi API thật
+    try {
+      mutation.mutate(values);
+    } catch (err) {
+      console.error("Submit error:", err);
+    }
   }
 
   return (
     <div className="flex items-center justify-center min-h-screen">
       <Form {...form}>
         <form
-          onSubmit={form.handleSubmit(onSubmit)}
+          onSubmit={(e) => {
+            form.handleSubmit(onSubmit)(e);
+          }}
           className="space-y-4 w-full max-w-sm p-8 border rounded-lg shadow-lg"
         >
           <h2 className="text-2xl font-bold text-center">Sign In</h2>
@@ -114,6 +112,7 @@ export default function SignInPage() {
               Do not have any accounts?
             </p>
             <Button
+              type="button"
               variant="link"
               onClick={() => navigate("/signup")}
               className="cursor-pointer text-blue-600"
