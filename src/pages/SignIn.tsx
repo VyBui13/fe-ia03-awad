@@ -40,7 +40,7 @@ export default function SignInPage() {
   const mutation = useMutation({
     mutationFn: loginUser,
     onSuccess: (data) => {
-      login(data.accessToken, data.refreshToken); // Lưu token vào Context và localStorage
+      login(data.accessToken, data.refreshToken);
 
       toast.success("Sign in successfully!");
       navigate("/"); // Chuyển hướng về trang chủ
