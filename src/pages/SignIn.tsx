@@ -17,6 +17,7 @@ import { AxiosError } from "axios";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMutation } from "@tanstack/react-query";
 import { loginUser } from "@/services/apiService";
+import OtherMethodLogin from "@/components/ui/OtherMethodLogin";
 
 // 1. Schema Validation (tương tự SignUp)
 const formSchema = z.object({
@@ -63,7 +64,7 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div className="flex flex-col items-center justify-center min-h-screen">
       <Form {...form}>
         <form
           onSubmit={(e) => {
@@ -122,6 +123,25 @@ export default function SignInPage() {
           </div>
         </form>
       </Form>
+
+      <div className="mt-6 w-full max-w-sm flex justify-center">
+        <OtherMethodLogin
+          onGoogleSuccess={(payload) => {
+            if (payload?.accessToken && payload?.refreshToken) {
+              login(payload.accessToken, payload.refreshToken);
+              toast.success("Sign in successfully!");
+              navigate("/");
+            } else {
+              toast.error("Google sign in failed.");
+            }
+          }}
+          onGoogleError={(err) => {
+            console.error("Google OAuth error:", err);
+            toast.error("Google sign in failed.");
+          }}
+        />
+      </div>
+
     </div>
   );
 }

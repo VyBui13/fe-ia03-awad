@@ -16,6 +16,8 @@ import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { registerUser } from "@/services/apiService";
+import OtherMethodLogin from "@/components/ui/OtherMethodLogin";
+import { useAuth } from "@/contexts/AuthContext";
 
 // 1. Định nghĩa Schema Validation bằng Zod
 const formSchema = z
@@ -39,6 +41,7 @@ const formSchema = z
 
 export default function SignUpPage() {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   // 4. Setup React Query Mutation [cite: 45]
   const mutation = useMutation({
@@ -78,7 +81,7 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div className="flex flex-col items-center justify-center min-h-screen">
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
@@ -146,6 +149,23 @@ export default function SignUpPage() {
           </div>
         </form>
       </Form>
+      <div className="mt-6 w-full max-w-sm flex justify-center">
+        <OtherMethodLogin
+          onGoogleSuccess={(payload) => {
+            if (payload?.accessToken && payload?.refreshToken) {
+              login(payload.accessToken, payload.refreshToken);
+              toast.success("Signed in with Google!");
+              navigate("/");
+            } else {
+              toast.error("Google sign up failed.");
+            }
+          }}
+          onGoogleError={(err) => {
+            console.error("Google OAuth error:", err);
+            toast.error("Google sign up failed.");
+          }}
+        />
+      </div>
     </div>
   );
 }
