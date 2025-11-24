@@ -1,57 +1,78 @@
-// src/pages/HomePage.tsx
-import { Button } from "@/components/ui/button";
+import { useState, useMemo } from "react";
+import { Sidebar } from "@/components/dashboard/Sidebar";
+import { EmailList } from "@/components/dashboard/EmailList";
+import { EmailDetail } from "@/components/dashboard/EmailDetail";
+import { MOCK_EMAILS } from "@/data/mockData";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query"; // <-- Import useQuery
-import { fetchUserProfile } from "@/services/apiService"; // <-- Import hàm mới
 
 export default function HomePage() {
   const { logout } = useAuth();
-  const navigate = useNavigate();
+  
+  // Dashboard State
+  const [selectedFolder, setSelectedFolder] = useState<string>("inbox");
+  const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
 
-  // 1. Dùng useQuery để fetch dữ liệu user (Req 33)
-  const {
-    data: user,
-    isLoading,
-    isError,
-  } = useQuery({
-    queryKey: ["userProfile"],
-    queryFn: fetchUserProfile,
-  });
+  // Filter emails based on selected folder
+  const filteredEmails = useMemo(() => {
+    if (selectedFolder === "starred") {
+        return MOCK_EMAILS.filter(e => e.isStarred);
+    }
+    return MOCK_EMAILS.filter((email) => email.folder === selectedFolder);
+  }, [selectedFolder]);
 
-  const handleLogout = () => {
-    logout();
-    toast.success("Logged out successfully!");
-    navigate("/signin"); // Chuyển hướng về signin (thay vì /login)
-  };
+  // Get current selected email object
+  const selectedEmail = useMemo(() => {
+    return MOCK_EMAILS.find((e) => e.id === selectedEmailId) || null;
+  }, [selectedEmailId]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
-      <h1 className="text-4xl font-bold">Welcome to the Dashboard</h1>
+    // Main Container: Full viewport height, no body scroll
+    <div className="flex h-screen w-full overflow-hidden bg-background">
+      
+      {/* COLUMN 1: SIDEBAR (Hidden on mobile) */}
+      <aside className="hidden md:flex w-64 flex-col flex-shrink-0 border-r">
+        <Sidebar 
+            selectedFolder={selectedFolder} 
+            onSelectFolder={(id) => {
+                setSelectedFolder(id);
+                setSelectedEmailId(null); // Reset selection when changing folder
+            }} 
+        />
+        {/* Logout button at bottom of sidebar */}
+        <div className="p-4 border-t bg-muted/20">
+            <button onClick={logout} className="text-sm font-medium text-red-600 hover:underline">
+                Sign out
+            </button>
+        </div>
+      </aside>
 
-      {/* 2. Hiển thị thông tin user (Req 48) */}
-      <div className="mt-6 p-4 border rounded-lg shadow-md">
-        {isLoading && <p>Loading user data...</p>}
-        {isError && <p className="text-red-500">Failed to load user data.</p>}
-        {user && (
-          <div>
-            <p className="text-lg">
-              Welcome, <span className="font-semibold">{user.email}</span>!
-            </p>
-            <p className="text-sm text-gray-600">User ID: {user._id}</p>
-          </div>
-        )}
+      {/* COLUMN 2: EMAIL LIST */}
+      {/* Logic: On mobile, hide this list if an email is selected (to show detail view) */}
+      <div className={`flex-1 md:flex md:w-[400px] md:flex-none flex-col border-r bg-background
+         ${selectedEmailId ? "hidden md:flex" : "flex"} 
+      `}>
+        <EmailList 
+            emails={filteredEmails} 
+            selectedEmailId={selectedEmailId}
+            onSelectEmail={setSelectedEmailId}
+        />
       </div>
 
-      <Button
-        variant="default"
-        className="mt-6 bg-red-500 text-white hover:bg-red-900 cursor-pointer"
-        onClick={handleLogout}
-      >
-        Logout
-        {/* Icon của bạn bị thiếu, tôi tạm bỏ qua */}
-      </Button>
+      {/* COLUMN 3: EMAIL DETAIL */}
+      {/* Logic: On mobile, only show this if an email is selected */}
+      <main className={`flex-1 flex-col bg-background
+          ${!selectedEmailId ? "hidden md:flex" : "flex"}
+      `}>
+         {/* Mobile Back Button */}
+         {selectedEmailId && (
+             <div className="md:hidden p-2 border-b flex items-center">
+                 <button onClick={() => setSelectedEmailId(null)} className="text-sm font-medium text-blue-600 px-2 py-1">
+                    &larr; Back to list
+                 </button>
+             </div>
+         )}
+         <EmailDetail email={selectedEmail} />
+      </main>
     </div>
   );
 }
