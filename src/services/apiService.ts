@@ -1,4 +1,5 @@
 // src/services/apiService.ts
+import { type Email } from "@/data/mockData";
 import api from "@/lib/api";
 import axios from "axios";
 // Import các kiểu Zod từ form của bạn (Giả sử bạn export chúng)
@@ -70,5 +71,30 @@ export const refreshAccessToken = async (): Promise<RefreshResponse> => {
 // ========================================================
 export const fetchUserProfile = async (): Promise<UserProfile> => {
   const { data } = await api.get("/user/me");
+  return data;
+};
+
+// ========================================================
+// 3. Email Data Service (Mock Endpoints)
+// ========================================================
+
+// GET /mailboxes
+export const fetchMailboxes = async () => {
+  // Gọi axios thật, MSW sẽ chặn URL này và trả về danh sách FOLDERS
+  const { data } = await api.get("/mailboxes");
+  return data;
+};
+
+// GET /mailboxes/:id/emails
+export const fetchEmails = async (folderId: string): Promise<Email[]> => {
+  // Gọi axios thật
+  const { data } = await api.get(`/mailboxes/${folderId}/emails`);
+  return data;
+};
+
+// GET /emails/:id
+export const fetchEmailDetail = async (emailId: string): Promise<Email | undefined> => {
+  // Gọi axios thật
+  const { data } = await api.get(`/emails/${emailId}`);
   return data;
 };

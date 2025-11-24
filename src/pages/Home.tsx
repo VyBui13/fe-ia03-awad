@@ -1,57 +1,104 @@
-// src/pages/HomePage.tsx
-import { Button } from "@/components/ui/button";
+// src/pages/Home.tsx
+import { useState } from "react";
+import { Sidebar } from "@/components/dashboard/Sidebar";
+import { EmailList } from "@/components/dashboard/EmailList";
+import { EmailDetail } from "@/components/dashboard/EmailDetail";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query"; // <-- Import useQuery
-import { fetchUserProfile } from "@/services/apiService"; // <-- Import hàm mới
+import { useQuery } from "@tanstack/react-query";
+import {
+  fetchEmails,
+  fetchMailboxes,
+  fetchEmailDetail,
+} from "@/services/apiService";
 
 export default function HomePage() {
   const { logout } = useAuth();
-  const navigate = useNavigate();
 
-  // 1. Dùng useQuery để fetch dữ liệu user (Req 33)
-  const {
-    data: user,
-    isLoading,
-    isError,
-  } = useQuery({
-    queryKey: ["userProfile"],
-    queryFn: fetchUserProfile,
+  // Dashboard State
+  const [selectedFolder, setSelectedFolder] = useState<string>("inbox");
+  const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
+
+  // 1. Fetch Emails bằng React Query (Thay vì filter tĩnh)
+  const { data: emails = [], isLoading } = useQuery({
+    queryKey: ["emails", selectedFolder], // Key thay đổi thì fetch lại
+    queryFn: () => fetchEmails(selectedFolder),
   });
 
-  const handleLogout = () => {
-    logout();
-    toast.success("Logged out successfully!");
-    navigate("/signin"); // Chuyển hướng về signin (thay vì /login)
-  };
+  const { data: folders = [] } = useQuery({
+    queryKey: ["mailboxes"],
+    queryFn: fetchMailboxes,
+  });
+
+  // 2. Tìm email đang chọn trong danh sách đã fetch
+  const { data: selectedEmail = null, isLoading: isLoadingDetail } = useQuery({
+    queryKey: ["email", selectedEmailId],
+    queryFn: () => fetchEmailDetail(selectedEmailId!),
+    enabled: !!selectedEmailId, // Chỉ gọi API khi có ID được chọn
+  });
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
-      <h1 className="text-4xl font-bold">Welcome to the Dashboard</h1>
+    <div className="flex h-screen w-full overflow-hidden bg-background">
+      {/* COLUMN 1: SIDEBAR */}
+      <aside className="hidden md:flex w-64 flex-col flex-shrink-0 border-r">
+        <Sidebar
+          folders={folders} // <--- Truyền data API vào đây
+          selectedFolder={selectedFolder}
+          onSelectFolder={(id) => {
+            setSelectedFolder(id);
+            setSelectedEmailId(null);
+          }}
+        />
+        <div className="p-4 border-t bg-muted/20">
+          <button
+            onClick={logout}
+            className="text-sm font-medium text-red-600 hover:underline cursor-pointer"
+          >
+            Sign out
+          </button>
+        </div>
+      </aside>
 
-      {/* 2. Hiển thị thông tin user (Req 48) */}
-      <div className="mt-6 p-4 border rounded-lg shadow-md">
-        {isLoading && <p>Loading user data...</p>}
-        {isError && <p className="text-red-500">Failed to load user data.</p>}
-        {user && (
-          <div>
-            <p className="text-lg">
-              Welcome, <span className="font-semibold">{user.email}</span>!
-            </p>
-            <p className="text-sm text-gray-600">User ID: {user._id}</p>
+      {/* COLUMN 2: EMAIL LIST */}
+      <div
+        className={`flex-1 md:flex md:w-[400px] md:flex-none flex-col border-r bg-background
+         ${selectedEmailId ? "hidden md:flex" : "flex"} 
+      `}
+      >
+        {isLoading ? (
+          <div className="flex items-center justify-center h-full text-muted-foreground">
+            Loading emails...
           </div>
+        ) : (
+          <EmailList
+            emails={emails}
+            selectedEmailId={selectedEmailId}
+            onSelectEmail={setSelectedEmailId}
+          />
         )}
       </div>
 
-      <Button
-        variant="default"
-        className="mt-6 bg-red-500 text-white hover:bg-red-900 cursor-pointer"
-        onClick={handleLogout}
+      {/* COLUMN 3: EMAIL DETAIL */}
+      <main
+        className={`flex-1 flex-col bg-background
+          ${!selectedEmailId ? "hidden md:flex" : "flex"}
+      `}
       >
-        Logout
-        {/* Icon của bạn bị thiếu, tôi tạm bỏ qua */}
-      </Button>
+        {selectedEmailId && (
+          <div className="md:hidden p-2 border-b flex items-center">
+            <button
+              onClick={() => setSelectedEmailId(null)}
+              className="text-sm font-medium text-blue-600 px-2 py-1"
+            >
+              &larr; Back to list
+            </button>
+          </div>
+        )}
+        {isLoadingDetail ? (
+          <div className="p-8 text-center">Loading detail...</div>
+        ) : (
+          <EmailDetail email={selectedEmail} />
+        )}
+      </main>
     </div>
   );
 }

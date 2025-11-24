@@ -12,11 +12,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { AxiosError } from "axios";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMutation } from "@tanstack/react-query";
 import { loginUser } from "@/services/apiService";
+import OtherMethodLogin from "@/components/ui/OtherMethodLogin";
+import { getGoogleAuthUrl } from "@/utils/oauth";
 
 // 1. Schema Validation (tương tự SignUp)
 const formSchema = z.object({
@@ -27,7 +29,11 @@ const formSchema = z.object({
 export default function SignInPage() {
   // 2. Setup React Hook Form
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth(); // Lấy isAuthenticated
+
+  if (isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -62,8 +68,9 @@ export default function SignInPage() {
     }
   }
 
+
   return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div className="flex flex-col items-center justify-center min-h-screen">
       <Form {...form}>
         <form
           onSubmit={(e) => {
@@ -122,6 +129,25 @@ export default function SignInPage() {
           </div>
         </form>
       </Form>
+
+      <div className="mt-6 w-full max-w-sm flex justify-center">
+        <OtherMethodLogin
+          onGoogleSuccess={(payload) => {
+            if (payload?.accessToken && payload?.refreshToken) {
+              login(payload.accessToken, payload.refreshToken);
+              toast.success("Sign in successfully!");
+              navigate("/");
+            } else {
+              toast.error("Google sign in failed.");
+            }
+          }}
+          onGoogleError={(err) => {
+            console.error("Google OAuth error:", err);
+            toast.error("Google sign in failed.");
+          }}
+        />
+      </div>
+
     </div>
   );
 }
