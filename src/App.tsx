@@ -4,6 +4,7 @@ import HomePage from "./pages/Home";
 import SignUpPage from "./pages/SignUp";
 import ProtectedRoute from "./components/ProtectRoute";
 import NotFoundRedirect from "./components/NotFoundRoute";
+import GoogleCallback from "./pages/GoogleCallBack";
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
       </Route>
       <Route path="/signin" element={<SignInPage />} />
       <Route path="/signup" element={<SignUpPage />} />
+      <Route path="/login/oauth/google/callback" element={<GoogleCallback />} />
 
       <Route path="*" element={<NotFoundRedirect />} />
     </Routes>
