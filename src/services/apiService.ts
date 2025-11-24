@@ -1,5 +1,5 @@
 // src/services/apiService.ts
-import { MOCK_EMAILS, FOLDERS, type Email } from "@/data/mockData";
+import { type Email } from "@/data/mockData";
 import api from "@/lib/api";
 import axios from "axios";
 // Import các kiểu Zod từ form của bạn (Giả sử bạn export chúng)
@@ -74,29 +74,27 @@ export const fetchUserProfile = async (): Promise<UserProfile> => {
   return data;
 };
 
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 // ========================================================
 // 3. Email Data Service (Mock Endpoints)
 // ========================================================
 
 // GET /mailboxes
 export const fetchMailboxes = async () => {
-  await delay(300);
-  return FOLDERS;
+  // Gọi axios thật, MSW sẽ chặn URL này và trả về danh sách FOLDERS
+  const { data } = await api.get("/mailboxes");
+  return data;
 };
 
 // GET /mailboxes/:id/emails
 export const fetchEmails = async (folderId: string): Promise<Email[]> => {
-  await delay(600); // Giả lập loading
-  
-  if (folderId === "starred") {
-    return MOCK_EMAILS.filter((e) => e.isStarred);
-  }
-  return MOCK_EMAILS.filter((e) => e.folder === folderId);
+  // Gọi axios thật
+  const { data } = await api.get(`/mailboxes/${folderId}/emails`);
+  return data;
 };
 
 // GET /emails/:id
 export const fetchEmailDetail = async (emailId: string): Promise<Email | undefined> => {
-  await delay(400);
-  return MOCK_EMAILS.find((e) => e.id === emailId);
+  // Gọi axios thật
+  const { data } = await api.get(`/emails/${emailId}`);
+  return data;
 };

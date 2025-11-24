@@ -1,6 +1,11 @@
-import { FOLDERS } from "@/data/mockData";
 import { cn } from "@/lib/utils";
 import { Inbox, Send, File, Star, Trash2, Archive } from "lucide-react";
+
+interface SidebarProps {
+  folders: { id: string; label: string; icon: string }[]; // Thêm dòng này
+  selectedFolder: string;
+  onSelectFolder: (folderId: string) => void;
+}
 
 // Map string icon names to Lucide components
 const iconMap: Record<string, any> = {
@@ -17,14 +22,14 @@ interface SidebarProps {
   onSelectFolder: (folderId: string) => void;
 }
 
-export function Sidebar({ selectedFolder, onSelectFolder }: SidebarProps) {
+export function Sidebar({ folders, selectedFolder, onSelectFolder }: SidebarProps) {
   return (
     <div className="w-full h-full flex flex-col py-4 gap-2 border-r bg-muted/20">
       <div className="px-4 mb-4">
         <h2 className="text-xl font-bold tracking-tight">Mail App</h2>
       </div>
       <nav className="flex-1 px-2 space-y-1">
-        {FOLDERS.map((folder) => {
+        {folders.map((folder) => {
           const Icon = iconMap[folder.icon] || Inbox;
           const isSelected = selectedFolder === folder.id;
           return (
