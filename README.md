@@ -3,12 +3,12 @@ A full-stack Single Page Application (SPA) demonstrating a secure authentication
 
 (Place a screenshot of your dashboard here)
 
-Live Demo
+🚀 Live Demo
 
 Public Hosting URL: https://fe-ia03-awad.vercel.app 
 
 
-Features
+✨ Features
 Authentication:
 
 Sign up & Sign in with Email/Password.
@@ -34,7 +34,7 @@ Protected Routes (requires login to access).
 
 Mock API integration for email data.
 
-Tech Stack
+🛠 Tech Stack
 Frontend: React (Vite), TypeScript, Tailwind CSS, Shadcn/UI, Axios, React Router DOM.
 
 Backend: Node.js, NestJS, Mongoose.
@@ -43,7 +43,7 @@ Database: MongoDB Atlas.
 
 Deployment: Vercel (Frontend & Backend).
 
-Setup and Run Locally
+⚙️ Setup and Run Locally
 Follow these instructions to reproduce the deployment locally. 
 
 Prerequisites
@@ -118,7 +118,7 @@ Bash
 npm run dev
 The app will run at http://localhost:5173.
 
-Token Storage & Security Considerations
+🔒 Token Storage & Security Considerations
 This application implements a secure authentication strategy based on industry standards for SPAs. 
 
 
@@ -141,7 +141,7 @@ An Axios Interceptor is configured to listen for 401 Unauthorized responses.
 
 When detected, it pauses the failed request, uses the Refresh Token to obtain a new Access Token from the backend, updates the memory state, and retries the original request seamlessly.
 
-Third-Party Services Used
+☁️ Third-Party Services Used
 
 Google OAuth 2.0: Used for the "Sign in with Google" functionality, allowing users to authenticate using their Google accounts without creating a new password.
 
@@ -149,7 +149,7 @@ MongoDB Atlas: Cloud-hosted NoSQL database for storing user credentials (hashed)
 
 Vercel: Cloud platform used for hosting both the Frontend (Static) and Backend (Serverless Functions).
 
-How to Test "Simulate Expiry"
+🧪 How to Test "Simulate Expiry"
 To verify the automatic token refresh mechanism:
 
 Log in to the application.
